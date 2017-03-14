@@ -19,6 +19,7 @@ int candidate_comparitor(const void *arg1, const void *arg2);
 candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE);
 void print_candidate(candidate cand);
 char *my_crossover_dna(candidate parent1, candidate parent2);
+void *mutate_single_dna(char *source);
 
 //---------MAIN---------
 int main() {
@@ -38,35 +39,34 @@ int main() {
   }
 
   //TODO: Infinite While Loop
+  int generation = 0;
+  while(1){
+    generation++;
+    //Sort the genepool by fitness
+    qsort(genepool, GENE_POOL_SIZE, sizeof(candidate), candidate_comparitor);
+    printf("[GEN %d] ", generation); print_candidate(genepool[0]); //DEBUGING
 
-  //Sort the genepool by fitness
-  qsort(genepool, GENE_POOL_SIZE, sizeof(candidate), candidate_comparitor);
+    if(genepool[0].fitness == 0){
+      //Target Reached
+      printf("TARGET = %s\n", target);
+      break;
+    }else{
+      //Select two random parents
+      candidate parent1 = get_rand_parent(genepool, GENE_POOL_SIZE);
+      candidate parent2 = get_rand_parent(genepool, GENE_POOL_SIZE);
 
-  //DEBUG print the genepool
-  for(int i = 0; i < GENE_POOL_SIZE; i++){
-    print_candidate(genepool[i]); 
-  }
+      //Create child by corssing over the two parents
+      char *child_dna = my_crossover_dna(parent1, parent1);
+      int child_fitval = fitness(child_dna, target);
+      candidate child = {child_dna, child_fitval};
+      //printf("CHILD: "); print_candidate(child);
 
-  //TODO: Select two random parents
-  candidate parent1 = get_rand_parent(genepool, GENE_POOL_SIZE);
-  candidate parent2 = get_rand_parent(genepool, GENE_POOL_SIZE);
-
-  //TODO: Create child by corssing over the two parents
-  char *child_dna = my_crossover_dna(parent1, parent1);
-  int child_fitval = fitness(child_dna, target);
-  candidate child = {child_dna, child_fitval};
-  printf("CHILD: "); print_candidate(child);
-
-  //TODO: Check if the child is better than the worst person in the genepool
-  candidate lowest_cand = genepool[GENE_POOL_SIZE -1 ];
-  if(child.fitness < lowest_cand.fitness){
-    genepool[GENE_POOL_SIZE -1 ] = child;
-  }
-
-  printf("---------\n");
-  //DEBUG print the genepool
-  for(int i = 0; i < GENE_POOL_SIZE; i++){
-    print_candidate(genepool[i]); 
+      //Check if the child is better than the worst person in the genepool
+      candidate lowest_cand = genepool[GENE_POOL_SIZE -1 ];
+      if(child.fitness < lowest_cand.fitness){
+	genepool[GENE_POOL_SIZE -1 ] = child;
+      }
+    }
   }
 
   //test();
@@ -130,8 +130,15 @@ char *my_crossover_dna(candidate parent1, candidate parent2){
       child[i] = parent2.dna[i];      
     }
   }
+
+  mutate_single_dna(child);
   //printf("%s\n", child);
   return child;
+}
+
+void *mutate_single_dna(char *source){
+  int rand_i = rand()%strlen(source);
+  source[rand_i] = source[rand_i] + (rand()%20 - 10);
 }
 
 //---------CANDIDATE COMPARITOR---------
