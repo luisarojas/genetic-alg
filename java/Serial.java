@@ -14,33 +14,112 @@ public class Serial {
     public static int MUTATION_PROB = 100;
     public static int FIT_PARENT_PROB = 100;
 
-    public static void getFitness(String dna) {
+    public static float getFitness(String dna) {
         
+        float fitness = 0;
+        for (int i = 0; i < TARGET.length(); i++) {
+            fitness += Math.abs((int)TARGET.charAt(i) - (int)dna.charAt(i));
+        }
+    
+        return fitness;
     }
     
-    public static void mutate(Candidate parent1, Candidate parent2) {
+    public static Candidate mutate(Candidate parent1, Candidate parent2) {
+        
+        // Crossover
+        String childDna = parent1.getDna();
+        
+        Random rand = new Random();
+        int start = rand.nextInt(parent1.getDna().length() - 1) + 1;
+        int end = rand.nextInt(parent1.getDna().length() - 1) + 2;
 
+        if (start > end) {
+            start = end;
+            end = start;
+        }
+        
+        // Mutation
+        if (rand.nextInt(100) < MUTATION_PROB) {
+            int indexToMutate = rand.nextInt(childDna.length() - 1);
+            
+            // String myName = "domanokz   ";
+            char[] childDnaChars = childDna.toCharArray();
+            childDnaChars[indexToMutate] = (char) ((int) childDnaChars[indexToMutate] + (rand.nextInt(10) - 5));
+            childDna = String.valueOf(childDnaChars);
+        }
+        
+        float childFitness = getFitness(childDna);
+
+        return new Candidate(childDna, childFitness);
     }
     
     public static Candidate getRandParent(List<Candidate> genepool) {
         
-        return null;
+        int randIndex = 0;
+        Random rand = new Random();
+        
+        if (rand.nextInt(100) < FIT_PARENT_PROB) {
+            randIndex = Math.round (rand.nextFloat() * rand.nextFloat() * ((GENESIZE/2) - 1));
+        } else {
+            randIndex = Math.round (rand.nextInt(GENESIZE/2) + GENESIZE/2);
+        }
+        
+        return genepool.get(randIndex);
     }
     
     public static List<Candidate> seedPopulation() {
         
+        List<Candidate> genepool = new ArrayList<Candidate>();
         
-    
-        return null;
+        for (int i = 0; i < GENESIZE; i++) {
+            
+            Random rand = new Random();
+            char data = ' ';
+            String dna = "";
+
+            for (int j = 0; j < TARGET.length(); j++) {
+              data = (char)(rand.nextInt(95) + 31);
+              dna += data;
+            }
+
+            float fitness = getFitness(dna);
+        
+            genepool.add(new Candidate(dna, fitness));
+        }
+
+        return genepool;
     }
 
     public static int run() {
         
         int generation = 0;
-        //List<Candidate> genepool = seedPopulation();
-        
-                
-        return 1;
+        List<Candidate> genepool = seedPopulation();
+
+        // for (Candidate c : genepool)
+        //     c.print();
+            
+        while (true) {
+            
+            generation++;
+            
+            Collections.sort(genepool);
+            
+            System.out.println (generation + " " + genepool.get(0).getFitness() + " " + genepool.get(0).getDna());
+            
+            if (genepool.get(0).getFitness() == 0) return generation;
+            
+            Candidate parent1 = getRandParent(genepool);
+            Candidate parent2 = getRandParent(genepool);
+            
+            while (parent1.getDna().equals(parent2.getDna()))
+                parent1 = getRandParent(genepool);
+    
+            Candidate child = mutate(parent1, parent2);
+            
+            if (child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
+                genepool.set(GENESIZE - 1, child);
+
+        }
     }
 
     public static void main(String[] args) {
@@ -49,7 +128,7 @@ public class Serial {
         int timesToRun = 1;
         
         for (int i = 0; i < timesToRun; i ++) {
-            System.out.println(i);
+            // System.out.println(i);
             sum += run();
         }
         
@@ -73,7 +152,7 @@ class Candidate implements Comparator<Candidate>, Comparable<Candidate> {
     }
     
     public void print() {
-        System.out.println("dna: " + this.getDna() + ", fitness: " + this.getFitness());
+        System.out.println( this.getFitness() + " --> " + this.getDna());
     }
     
     public void setDna(String dna) { this.dna = dna; }
