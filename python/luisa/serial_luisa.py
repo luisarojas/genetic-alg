@@ -12,6 +12,7 @@ FIT_PARENT_PROB = 100
 def get_fitness(dna):
     fitness = 0;
     for i in range(len(TARGET)):
+        # ord(): char -> ascii
         fitness += abs(ord(TARGET[i]) - ord(dna[i]))
     return fitness
     

@@ -106,7 +106,10 @@ public class Serial {
             
             System.out.println (generation + " " + genepool.get(0).getFitness() + " " + genepool.get(0).getDna());
             
-            if (genepool.get(0).getFitness() == 0) return generation;
+            if (genepool.get(0).getFitness() == 0) {
+                System.out.println("Found target at generation " + generation);
+                return generation;
+            }
             
             Candidate parent1 = getRandParent(genepool);
             Candidate parent2 = getRandParent(genepool);
@@ -118,7 +121,6 @@ public class Serial {
             
             if (child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
                 genepool.set(GENESIZE - 1, child);
-
         }
     }
 
