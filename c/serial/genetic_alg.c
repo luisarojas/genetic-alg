@@ -1,53 +1,63 @@
-#include <time.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-#define GENESIZE 20
-#define MAX_CHAIN_LENGTH 1
+#define GENE_POOL_SIZE 10
 
-char *target = "Hello, World!";
+const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
+
+//---------PROTOTYPES---------
+void test();
+char *gen_string(int length);
 
 /* We need to keep keys and values */
-typedef struct {
+typedef struct candidate{
     char* dna;
     float fitness;
 } candidate;
 
-/* A hashmap has some maximum size and current size,
- * as well as the data to hold. */
-typedef struct {
-	int count;
-	int size;
-	candidate *cand;
-} hashmap;
-
-// int crossover_prob; // TODO: Introduce cross over probability
-int mutation_prob;
-
-//genepool[GENESIZE]; // TODO: need dictionary-like data structure for this
-
-int rand_num(int range);
-
+//---------MAIN---------
 int main() {
-    
-    mutation_prob = 100;
-    
-    return 0;
+  srand(time(NULL));
+  char *target = "Hello, World!";
+  int target_len = strlen(target);
+  
+  gen_string(target_len);
+
+  //Generate the gene pool
+  char *genepool[GENE_POOL_SIZE];
+  for(int i = 0; i < GENE_POOL_SIZE; i++){
+    genepool[i] = gen_string(target_len); //generate random string
+    printf("%s\n", genepool[i]); //DEBUG
+  }
+
+  //test();
+  return 0;
 }
 
-int rand_num(int range) {
-    srand(time(NULL));
-    int r = rand() % range;
+char *gen_string(int length){
+  //Generates a random string of the given length
+  char *rand_string = (char *) malloc(length); //Allocate memory for the string to be returned
+  int alphabet_len = strlen(ALPHABET); //Get the length of the alphabet
+
+  //Iterate length amount of times
+  for(int i = 0; i < length; i++){    
+    int rand_index = rand() % alphabet_len; //generate random index
+    rand_string[i] = ALPHABET[rand_index];  //get random character from the alphabet
+  }  
+  //printf("%s\n", rand_string); //DEBUG
+  return rand_string;
 }
 
-hashmap* hash_create(int start_size) {
-    
-    hashmap* hm = (hashmap*)malloc(sizeof(hashmap));
 
-    hm->cand = (candidate*)calloc(sizeof(candidate), start_size);
-    hm->size = start_size;
-    hm->count = 0;
+void test(){
 
-    return hm;
+  /* int len = strlen(ALPHABET); */
+  /* printf("len = %d\n", len); */
+  /* for(int i = 0; i < len; i++){ */
+  /*   printf("%c\n",ALPHABET[i]); */
+  /* } */
+  //printf("\n");
+  
 }
