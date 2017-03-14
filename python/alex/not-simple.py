@@ -5,8 +5,8 @@ from functools import reduce
 alphabet=string.printable[:-5]
 
 def main():
-    run_alg(True) #True means we want debugging(printing) enabled
-    #benchmark_alg(1000) #Run the alg 10 times and get the average: 1000 RUNS = 1352.591
+    #run_alg(True) #True means we want debugging(printing) enabled
+    benchmark_alg(100) #Run the alg 10 times and get the average: 1000 RUNS = 1352.591
 
 def benchmark_alg(num_runs):
     #Runs the algorithm num_run times and get the average number of generations it took
@@ -60,7 +60,7 @@ def run_alg(debug):
             parent2 = random_parent(genepool, GENE_POOL_SIZE)
 
             #make a baby ;)
-            child_dna = my_crossover_dna(parent1["dna"], parent2["dna"])
+            child_dna = crossover_dna(parent1["dna"], parent2["dna"])
             child = {"dna": child_dna, "fitness":fitness(child_dna, target)}
 
             #Check if the child is better than the worst person in the genepool
