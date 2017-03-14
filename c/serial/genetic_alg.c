@@ -3,26 +3,28 @@
 #include <string.h>
 #include <time.h>
 
-#define GENE_POOL_SIZE 10
-
 const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
+
+/* We need to keep keys and values */
+typedef struct{
+  char* dna;
+  int fitness;
+} candidate;
 
 //---------PROTOTYPES---------
 void test();
 char *gen_string(int length);
 int fitness(char *source, char *target);
-
-/* We need to keep keys and values */
-typedef struct candidate{
-  char* dna;
-  int fitness;
-} candidate;
+int candidate_comparitor(const void *arg1, const void *arg2);
+candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE);
+void print_candidate(candidate cand);
 
 //---------MAIN---------
 int main() {
-  srand(time(NULL));
-  char *target = "Hello, World!";
-  int target_len = strlen(target);  
+  srand(time(NULL)); //Seed the random time
+  char *target = "Hello, World!"; //Set the target
+  int target_len = strlen(target); //Get target length
+  const int GENE_POOL_SIZE = 10; //Set the size of the gene pool
 
   //Generate the gene pool
   candidate genepool[GENE_POOL_SIZE];
@@ -32,10 +34,27 @@ int main() {
     int fitval = fitness(rand_dna, target); //TODO: get from fitness function
     candidate new_cand = {rand_dna, fitval}; //create a new candidate
     genepool[i] = new_cand; //add candidate to gene pool    
-    printf("%s, %d\n", genepool[i].dna, genepool[i].fitness); //DEBUG
   }
 
-  fitness("TESTaa", "TESTzz"); //TEMP TODO: delete
+  //TODO: Infinite While Loop
+
+  //Sort the genepool by fitness
+  qsort(genepool, GENE_POOL_SIZE, sizeof(candidate), candidate_comparitor);
+
+  //DEBUG print the genepool
+  for(int i = 0; i < GENE_POOL_SIZE; i++){
+    print_candidate(genepool[i]); 
+  }
+
+  //TODO: Select two random parents
+  candidate parent1 = get_rand_parent(genepool, GENE_POOL_SIZE);
+  //print_candidate(parent1);
+  candidate parent2 = get_rand_parent(genepool, GENE_POOL_SIZE);
+  //print_candidate(parent2);
+
+  //TODO: Create child by corssing over the two parents
+
+  //TODO: Check if the child is better than the worst person in the genepool
 
   //test();
   return 0;
@@ -69,8 +88,38 @@ int fitness(char *source, char *target){
   return fitval;
 }
 
-//---------TEST---------
+candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE){
+  const int FIT_PARENT_PROB = 90;
+  
+  int rand_index = 0;
+  float random_float = (float)rand()/(float)RAND_MAX; //Random float 0-1
+  rand_index = random_float * (GENE_POOL_SIZE/2); //Random int from: 0 - (GENE_POOL_SIZE - 1)
+  
+  if(rand()% 100 >= FIT_PARENT_PROB){
+    rand_index += (GENE_POOL_SIZE/2);
+  }
+  //printf("rand_index = %d\n", rand_index);
+  return genepool[rand_index];
+}
 
+void print_candidate(candidate cand){
+  printf("%s : [%d] \n", cand.dna, cand.fitness);
+}
+
+//---------CANDIDATE COMPARITOR---------
+int candidate_comparitor(const void *arg1, const void *arg2){
+  const candidate *c1 = (candidate *)arg1;
+  const candidate *c2 = (candidate *)arg2;
+  if(c1->fitness < c2->fitness){
+    return -1;
+  }else if(c1->fitness > c2->fitness){
+    return 1;
+  }else{
+    return 0;
+  }  
+}
+
+//---------TEST---------
 void test(){
 
   /* int len = strlen(ALPHABET); */
