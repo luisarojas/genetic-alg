@@ -1,3 +1,4 @@
+# TODO: Make sure the same parent can't be picked twice
 import random
 import string
 # from datetime import datetime
@@ -6,6 +7,7 @@ import string
 target = "Hello, World!"
 
 # crossover_prob = 30 # TODO: Introduce cross over probability
+parent1_prob = 50 # so, parent2_prob = 100 - parent1_prob
 mutation_prob = 100
 fit_parent_prob = 100
 
@@ -23,6 +25,9 @@ def mutate(parent1, parent2):
     
     # Crossover operation to determine how parents combine to produce offspring
     
+    # OPTION 1
+    #----------------------------
+    
     # Re-structured crossover section to avoid chance of total clones
     # between parent 1 and child
     
@@ -37,6 +42,9 @@ def mutate(parent1, parent2):
     # else:
     #     child_dna = child_dna2
     
+    # OPTION 2
+    #----------------------------
+        
     child_dna = parent1['dna'][:]    
     
     start = random.randint(1, len(parent2['dna']) - 1)
@@ -46,7 +54,28 @@ def mutate(parent1, parent2):
        end, start = start, end
     child_dna[start:end] = parent2['dna'][start:end]
     
-    # mutate only according to the probability set for this purpose
+    # OPTION 3
+    #----------------------------
+    
+    # Re-structured crossover section to avoid chance of total clones
+    # between parent 1 and child
+    
+    # child_dna = []
+    # 
+    # for i in range(len(parent1['dna'])):
+    #     
+    #     if (random.randint(0, 100) < parent1_prob):
+    #         # get current character from parent1
+    #         child_dna.append(parent1['dna'][i])
+    #         print(parent1['dna'][i])
+    #         
+    #     else:
+    #         # get character from parent2
+    #        child_dna.append(parent2['dna'][i])
+            
+    # print(str(''.join(child_dna)))
+    
+    # Mutation operation: Do so only according to the probability set for this purpose
     if (random.randint(0, 100) < mutation_prob):
         # mutate one position
         index_to_mutate = random.randint(0, len(child_dna) - 1)    
@@ -95,11 +124,11 @@ if __name__ == "__main__":
         # sort genepool by fitness
         genepool.sort(key=lambda candidate: candidate['fitness'])
         
-        for candidate in genepool:
-            print ("%6i, %6i, %15s" % (generation, candidate['fitness'], ''.join(candidate['dna'])))
+        # for candidate in genepool:
+        #     print ("%6i, %6i, %15s" % (generation, candidate['fitness'], ''.join(candidate['dna'])))
         
-        #print("Fittest string: " + str(''.join(genepool[0]['dna'])) + ", fitness: " + str(genepool[0]['fitness']))
-            
+        print ("%6i, %6i, %15s" % (generation, genepool[0]['fitness'], ''.join(genepool[0]['dna'])))
+                    
         # if the best fitness is 0, target was reached
         if (genepool[0]['fitness'] == 0):
             #print("Target was reached in generation "+ str(generation) +"!")
@@ -108,10 +137,14 @@ if __name__ == "__main__":
         # otherwise, keep on breeding
         parent1 = get_rand_parent()
         parent2 = get_rand_parent()
+        
+        while (parent1['dna'] == parent2['dna']):
+            parent1 = get_rand_parent() # doesn't matter which one we pick - they are the same
+        
         child = mutate(parent1, parent2)
 
         # if the child's fitness is better than the one of the current worst, then replace
         if (child['fitness'] < genepool[(len(genepool) - 1)]['fitness']):
             genepool[(len(genepool) - 1)] = child
-            
+    
             
