@@ -1,23 +1,18 @@
-# TODO: Make sure the same parent can't be picked twice
 import random
 import string
-# from datetime import datetime
-# random.seed(datetime.now())
-
-target = "Hello, World!"
-
-# crossover_prob = 30 # TODO: Introduce cross over probability
-parent1_prob = 50 # so, parent2_prob = 100 - parent1_prob
-mutation_prob = 100
-fit_parent_prob = 100
 
 GENESIZE = 20
-genepool = []
+TARGET = "Hello, World!"
+
+# CROSSOVER_PROB = 100 # TODO: Introduce cross over probability
+PARENT1_PROB = 50 # so, parent2_prob = 100 - PARENT1_PROB
+MUTATION_PROB = 100
+FIT_PARENT_PROB = 100
 
 def get_fitness(dna):
     fitness = 0;
-    for i in range(len(target)):
-        fitness += abs(ord(target[i]) - ord(dna[i]))
+    for i in range(len(TARGET)):
+        fitness += abs(ord(TARGET[i]) - ord(dna[i]))
     return fitness
     
 # Mutation operation to determine how random deviations manifest themselves
@@ -64,7 +59,7 @@ def mutate(parent1, parent2):
     # 
     # for i in range(len(parent1['dna'])):
     #     
-    #     if (random.randint(0, 100) < parent1_prob):
+    #     if (random.randint(0, 100) < PARENT1_PROB):
     #         # get current character from parent1
     #         child_dna.append(parent1['dna'][i])
     #         print(parent1['dna'][i])
@@ -76,7 +71,7 @@ def mutate(parent1, parent2):
     # print(str(''.join(child_dna)))
     
     # Mutation operation: Do so only according to the probability set for this purpose
-    if (random.randint(0, 100) < mutation_prob):
+    if (random.randint(0, 100) < MUTATION_PROB):
         # mutate one position
         index_to_mutate = random.randint(0, len(child_dna) - 1)    
         # mutation only affects fitness by 5 points max
@@ -86,11 +81,11 @@ def mutate(parent1, parent2):
     
     return ({'dna': child_dna, 'fitness': child_fitness})
     
-def get_rand_parent():
+def get_rand_parent(genepool):
     
     # Re-structured so that parents with lower fitness have *some* chance of getting picked
     rand_index = 0
-    if (random.randint(0, 100) < fit_parent_prob):
+    if (random.randint(0, 100) < FIT_PARENT_PROB):
         # rand_index = random.randint(0, GENESIZE/2)
         rand_index = int(random.random() * random.random() * ((GENESIZE/2) - 1)) # uniform product distribution
     else:
@@ -101,19 +96,24 @@ def get_rand_parent():
     return (genepool[rand_index])
     
 def seed_population():
+    
+    genepool = []
+    
     # generate 20 random candidates to populate the genepool
     for i in range (GENESIZE):
         # printable: string constant. combination of digits, letters, punctuation, and whitespace.
         # note: a more secure version could be random.SystemRandom()
-        dna = [random.choice(string.printable[:-5]) for _ in range(len(target))]
+        dna = [random.choice(string.printable[:-5]) for _ in range(len(TARGET))]
         fitness = get_fitness (dna)
         candidate = {'dna': dna, 'fitness': fitness}
         # print (candidate)
         genepool.append(candidate)
+        
+    return genepool
 
-if __name__ == "__main__":
+def run():
     
-    seed_population()
+    genepool = seed_population()
     
     # initialize first iteration
     generation = 0
@@ -127,19 +127,21 @@ if __name__ == "__main__":
         # for candidate in genepool:
         #     print ("%6i, %6i, %15s" % (generation, candidate['fitness'], ''.join(candidate['dna'])))
         
-        print ("%6i, %6i, %15s" % (generation, genepool[0]['fitness'], ''.join(genepool[0]['dna'])))
+        # print ("%6i, %6i, %15s" % (generation, genepool[0]['fitness'], ''.join(genepool[0]['dna'])))
                     
-        # if the best fitness is 0, target was reached
+        # if the best fitness is 0, TARGET was reached
         if (genepool[0]['fitness'] == 0):
-            #print("Target was reached in generation "+ str(generation) +"!")
-            break
+            #print("TARGET was reached in generation "+ str(generation) +"!")
+            #break
+            
+            return generation
         
         # otherwise, keep on breeding
-        parent1 = get_rand_parent()
-        parent2 = get_rand_parent()
+        parent1 = get_rand_parent(genepool)
+        parent2 = get_rand_parent(genepool)
         
         while (parent1['dna'] == parent2['dna']):
-            parent1 = get_rand_parent() # doesn't matter which one we pick - they are the same
+            parent1 = get_rand_parent(genepool) # doesn't matter which one we pick - they are the same
         
         child = mutate(parent1, parent2)
 
@@ -147,4 +149,14 @@ if __name__ == "__main__":
         if (child['fitness'] < genepool[(len(genepool) - 1)]['fitness']):
             genepool[(len(genepool) - 1)] = child
     
+if __name__ == "__main__":
+        
+    times_to_run = 1000
+    results = []
+    
+    for i in range(times_to_run):
+        print(str(i))
+        results.append(run())
+    
+    print("Average: " + str(sum(results) / float(len(results))))
             
