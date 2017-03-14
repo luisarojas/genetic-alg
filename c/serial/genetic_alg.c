@@ -21,20 +21,25 @@ typedef struct candidate{
 int main() {
   srand(time(NULL));
   char *target = "Hello, World!";
-  int target_len = strlen(target);
-  
-  gen_string(target_len);
+  int target_len = strlen(target);  
 
   //Generate the gene pool
-  char *genepool[GENE_POOL_SIZE];
+  candidate genepool[GENE_POOL_SIZE];
   for(int i = 0; i < GENE_POOL_SIZE; i++){
-    genepool[i] = gen_string(target_len); //generate random string
-    printf("%s\n", genepool[i]); //DEBUG
+    //genepool[i] = gen_string(target_len); //generate random string
+    char *rand_dna = gen_string(target_len); //create a random dna
+    int fitval = 0; //TODO: get from fitness function
+    candidate new_cand = {rand_dna, fitval}; //create a new candidate
+    genepool[i] = new_cand; //add candidate to gene pool
+    
+    printf("%s\n", genepool[i].dna); //DEBUG
   }
 
   //test();
   return 0;
 }
+
+//---------UTILITY FUNCTIONS---------
 
 char *gen_string(int length){
   //Generates a random string of the given length
@@ -50,6 +55,7 @@ char *gen_string(int length){
   return rand_string;
 }
 
+//---------TEST---------
 
 void test(){
 
