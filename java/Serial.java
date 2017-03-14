@@ -1,6 +1,8 @@
 import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.*;
+import java.lang.*;
 
 public class Serial {
     
@@ -26,11 +28,17 @@ public class Serial {
     }
     
     public static List<Candidate> seedPopulation() {
+        
+        
     
         return null;
     }
 
     public static int run() {
+        
+        int generation = 0;
+        //List<Candidate> genepool = seedPopulation();
+        
                 
         return 1;
     }
@@ -38,18 +46,18 @@ public class Serial {
     public static void main(String[] args) {
         
         int sum = 0;
-        int timesToRun = 1000;
+        int timesToRun = 1;
         
         for (int i = 0; i < timesToRun; i ++) {
             System.out.println(i);
             sum += run();
         }
         
-        System.out.println("Average: " + (float) sum/timesToRun);
+        // System.out.println("Average: " + (float) sum/timesToRun);
     }
 }
 
-class Candidate {
+class Candidate implements Comparator<Candidate>, Comparable<Candidate> {
     
     private String dna;
     private float fitness;
@@ -65,7 +73,7 @@ class Candidate {
     }
     
     public void print() {
-        System.out.println("DNA: " + this.dna + ", FITNESS: " + this.fitness);
+        System.out.println("dna: " + this.getDna() + ", fitness: " + this.getFitness());
     }
     
     public void setDna(String dna) { this.dna = dna; }
@@ -73,4 +81,23 @@ class Candidate {
     public String getDna() { return this.dna; }
     public float getFitness() { return this.fitness; }
     
+    // Overriding the compareTo method
+    @Override
+    public int compareTo(Candidate c) {
+        
+        if (c.getFitness() < this.fitness) return 1;
+        else if (c.getFitness() > this.fitness) return -1;
+        return 0;
+    }
+
+    // Overriding the compare method to sort the age 
+    @Override
+    public int compare(Candidate c1, Candidate c2) {
+        
+        //ascending order
+        return c1.compareTo(c2);
+        
+        //descending order
+        //return c2.compareTo(c1);
+    }
 }
