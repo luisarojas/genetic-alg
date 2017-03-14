@@ -10,11 +10,12 @@ const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST
 //---------PROTOTYPES---------
 void test();
 char *gen_string(int length);
+int fitness(char *source, char *target);
 
 /* We need to keep keys and values */
 typedef struct candidate{
-    char* dna;
-    float fitness;
+  char* dna;
+  int fitness;
 } candidate;
 
 //---------MAIN---------
@@ -28,12 +29,13 @@ int main() {
   for(int i = 0; i < GENE_POOL_SIZE; i++){
     //genepool[i] = gen_string(target_len); //generate random string
     char *rand_dna = gen_string(target_len); //create a random dna
-    int fitval = 0; //TODO: get from fitness function
+    int fitval = fitness(rand_dna, target); //TODO: get from fitness function
     candidate new_cand = {rand_dna, fitval}; //create a new candidate
-    genepool[i] = new_cand; //add candidate to gene pool
-    
-    printf("%s\n", genepool[i].dna); //DEBUG
+    genepool[i] = new_cand; //add candidate to gene pool    
+    printf("%s, %d\n", genepool[i].dna, genepool[i].fitness); //DEBUG
   }
+
+  fitness("TESTaa", "TESTzz"); //TEMP TODO: delete
 
   //test();
   return 0;
@@ -53,6 +55,18 @@ char *gen_string(int length){
   }  
   //printf("%s\n", rand_string); //DEBUG
   return rand_string;
+}
+
+int fitness(char *source, char *target){
+  //Calculates the difference between the source and target strings
+  int fitval = 0;
+  for(int i = 0; i < strlen(target); i++){
+    int curr_fitval = abs(source[i] - target[i]);
+    fitval += curr_fitval;
+    //printf("source = %c | target = %c | diff = %d\n", source[i], target[i], curr_fitval);
+  }
+  //printf("TOTAL fitval = %d\n", fitval);
+  return fitval;
 }
 
 //---------TEST---------
