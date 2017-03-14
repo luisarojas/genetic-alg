@@ -1,12 +1,15 @@
 import random
 import string
+# from datetime import datetime
+# random.seed(datetime.now())
 
 target = "Hello, World!"
 
 # crossover_prob = 30 # TODO: Introduce cross over probability
 mutation_prob = 100
+fit_parent_prob = 100
 
-GENSIZE = 20
+GENESIZE = 20
 genepool = []
 
 def get_fitness(dna):
@@ -23,23 +26,25 @@ def mutate(parent1, parent2):
     # Re-structured crossover section to avoid chance of total clones
     # between parent 1 and child
     
-    child_dna = ""
-    pos = (random.randint(0, len(parent1['dna']) ))
+    # child_dna = ''
+    # pos = (random.randint(1, len(parent1['dna']) ))
+    # 
+    # child_dna1 = parent1['dna'][:pos] + parent2['dna'][pos:]
+    # child_dna2 = parent2['dna'][:pos] + parent1['dna'][pos:]
+    # 
+    # if (get_fitness(child_dna1) > get_fitness(child_dna2)):
+    #     child_dna = child_dna1
+    # else:
+    #     child_dna = child_dna2
     
-    child_dna1 = parent1['dna'][:pos] + parent2['dna'][pos:]
-    child_dna2 = parent2['dna'][:pos] + parent1['dna'][pos:]
+    child_dna = parent1['dna'][:]    
     
-    if (get_fitness(child_dna1) > get_fitness(child_dna2)):
-        child_dna = child_dna1
-    else:
-        child_dna = child_dna2
+    start = random.randint(1, len(parent2['dna']) - 1)
+    end = random.randint(2, len(parent2['dna']) - 1)
     
-    #child_dna = parent1['dna'][:]    
-    #start = random.randint(0, len(parent2['dna']) - 1)
-    #stop = random.randint(0, len(parent2['dna']) - 1)
-    #if start > stop:
-    #    stop, start = start, stop
-    #child_dna[start:stop] = parent2['dna'][start:stop]
+    if start > end:
+       end, start = start, end
+    child_dna[start:end] = parent2['dna'][start:end]
     
     # mutate only according to the probability set for this purpose
     if (random.randint(0, 100) < mutation_prob):
@@ -54,21 +59,27 @@ def mutate(parent1, parent2):
     
 def get_rand_parent():
     
-    #Re-structured so that parents with lower fitness have *some* chance of getting picked
+    # Re-structured so that parents with lower fitness have *some* chance of getting picked
+    rand_index = 0
+    if (random.randint(0, 100) < fit_parent_prob):
+        # rand_index = random.randint(0, GENESIZE/2)
+        rand_index = int(random.random() * random.random() * ((GENESIZE/2) - 1)) # uniform product distribution
+    else:
+        rand_index = random.randint(GENESIZE/2, GENESIZE - 1)
 
     # Selection method to determine how parents are selected for breeding from population
-    rand_index = int(random.random() * random.random() * ((GENSIZE/2) - 1))
+    #rand_index = int(random.random() * random.random() * ((GENESIZE/2) - 1))
     return (genepool[rand_index])
     
 def seed_population():
     # generate 20 random candidates to populate the genepool
-    for i in range (GENSIZE):
+    for i in range (GENESIZE):
         # printable: string constant. combination of digits, letters, punctuation, and whitespace.
         # note: a more secure version could be random.SystemRandom()
         dna = [random.choice(string.printable[:-5]) for _ in range(len(target))]
         fitness = get_fitness (dna)
         candidate = {'dna': dna, 'fitness': fitness}
-        print (candidate)
+        # print (candidate)
         genepool.append(candidate)
 
 if __name__ == "__main__":
@@ -76,21 +87,22 @@ if __name__ == "__main__":
     seed_population()
     
     # initialize first iteration
-    generation = 0    
+    generation = 0
     
     while True:
+        
         generation += 1
         # sort genepool by fitness
         genepool.sort(key=lambda candidate: candidate['fitness'])
         
-        #for candidate in genepool:
-        #    print ("%6i, %6i, %15s" % (generation, candidate['fitness'], ''.join(candidate['dna'])))
+        for candidate in genepool:
+            print ("%6i, %6i, %15s" % (generation, candidate['fitness'], ''.join(candidate['dna'])))
         
-        print("Fittest string: " + str(''.join(genepool[0]['dna'])) + ", fitness: " + str(genepool[0]['fitness']))
+        #print("Fittest string: " + str(''.join(genepool[0]['dna'])) + ", fitness: " + str(genepool[0]['fitness']))
             
         # if the best fitness is 0, target was reached
         if (genepool[0]['fitness'] == 0):
-            print("Target was reached in generation "+ str(generation) +"!")
+            #print("Target was reached in generation "+ str(generation) +"!")
             break
         
         # otherwise, keep on breeding
@@ -101,3 +113,5 @@ if __name__ == "__main__":
         # if the child's fitness is better than the one of the current worst, then replace
         if (child['fitness'] < genepool[(len(genepool) - 1)]['fitness']):
             genepool[(len(genepool) - 1)] = child
+            
+            
