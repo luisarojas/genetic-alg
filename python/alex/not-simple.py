@@ -52,7 +52,7 @@ def run_alg(debug):
         
         if genepool[0]["fitness"] == 0:
             #Target Reached
-            if debug: print("TARGET =", target)
+            if debug: print("TARGET =", genepool[0]["fitness"])
             return generation
         else:
             #Select two random parents
@@ -78,7 +78,6 @@ def random_parent(genepool, GENE_SIZE):
     random_index = int(random.random() * random.random() * (GENE_SIZE - 1))
     return genepool[random_index]
     
-
 def crossover_dna(parent1, parent2):
     child_dna = list(parent1)
 

@@ -141,8 +141,8 @@ def run():
         parent1 = get_rand_parent(genepool)
         parent2 = get_rand_parent(genepool)
         
-        while (parent1['dna'] == parent2['dna']):
-            parent1 = get_rand_parent(genepool) # doesn't matter which one we pick - they are the same
+        # while (parent1['dna'] == parent2['dna']):
+        #     parent1 = get_rand_parent(genepool) # doesn't matter which one we pick - they are the same
         
         child = mutate(parent1, parent2)
 
