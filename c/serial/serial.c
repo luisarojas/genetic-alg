@@ -5,8 +5,12 @@
 #include <pthread.h>
 
 const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
+
+const char *TARGET = "Hello, World!"; //Set the target
+const int GENE_POOL_SIZE = 10; //Set the size of the gene pool
 const int FIT_PARENT_PROB = 90;
 const int MUTATION_PROB = 100;
+int TARGET_LEN;
 
 /* We need to keep keys and values */
 typedef struct{
@@ -17,9 +21,9 @@ typedef struct{
 //---------PROTOTYPES---------
 void test();
 char *gen_string(int length);
-int get_fitness(char *source, char *TARGET);
+int get_fitness(char *source);
 int candidate_comparator(const void *arg1, const void *arg2);
-candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE);
+candidate get_rand_parent(candidate genepool[]);
 void print_candidate(candidate cand);
 char *crossover(candidate parent1, candidate parent2);
 void mutate(char *source);
@@ -28,7 +32,9 @@ int run();
 //---------MAIN---------
 int main() {
 
-	int times_to_run = 10000;
+	TARGET_LEN = strlen(TARGET); //Get target length
+
+	int times_to_run = 1;
 	int sum = 0;
 
   for(int i = 0; i < times_to_run; i++) {
@@ -42,16 +48,13 @@ int main() {
 
 int run() {
   srand(time(NULL)); //Seed the random time
-  char *TARGET = "Hello, World!"; //Set the target
-  int TARGET_LEN = strlen(TARGET); //Get target length
-  const int GENE_POOL_SIZE = 10; //Set the size of the gene pool
 
   //Generate the gene pool
   candidate genepool[GENE_POOL_SIZE];
   for(int i = 0; i < GENE_POOL_SIZE; i++){
     //genepool[i] = gen_string(target_len); //generate random string
     char *rand_dna = gen_string(TARGET_LEN); //create a random dna
-    int fitval = get_fitness(rand_dna, TARGET);
+    int fitval = get_fitness(rand_dna);
     candidate new_cand = {rand_dna, fitval}; //create a new candidate
     genepool[i] = new_cand; //add candidate to gene pool
   }
@@ -65,28 +68,23 @@ int run() {
 
     if(genepool[0].fitness == 0){
       //Target Reached
-      //printf("TARGET REACHED: \"%s\" in %d generations\n", TARGET, generation);
+      printf("TARGET REACHED: \"%s\" in %d generations\n", TARGET, generation);
       return generation;
     }else{
       //Select two random parents
-      // int a; test();
-      // candidate parent_test = get_rand_parent(genepool, GENE_POOL_SIZE);
-      // scanf("%d", &a); //Temp for debugging
-      candidate parent1 = get_rand_parent(genepool, GENE_POOL_SIZE);
-      candidate parent2 = get_rand_parent(genepool, GENE_POOL_SIZE);
+      candidate parent1 = get_rand_parent(genepool);
+      candidate parent2 = get_rand_parent(genepool);
 
       //Create child by corssing over the two parents
       char *child_dna = crossover(parent1, parent1);
-      // char *child_dna = mutate(crossover(parent1, parent1));
       mutate(child_dna);
-      int child_fitval = get_fitness(child_dna, TARGET);
+      int child_fitval = get_fitness(child_dna);
       candidate child = {child_dna, child_fitval};
-      //printf("CHILD: "); print_candidate(child);
 
       //Check if the child is better than the worst person in the genepool
       candidate lowest_cand = genepool[GENE_POOL_SIZE -1 ];
       if(child.fitness < lowest_cand.fitness){
-	genepool[GENE_POOL_SIZE -1 ] = child;
+      	genepool[GENE_POOL_SIZE -1 ] = child;
       }
     }
   }
@@ -111,11 +109,11 @@ char *gen_string(int length){
   return rand_string;
 }
 
-int get_fitness(char *source, char *target){
+int get_fitness(char *source){
   //Calculates the difference between the source and target strings
   int fitval = 0;
-  for(int i = 0; i < strlen(target); i++){
-    int curr_fitval = abs(source[i] - target[i]);
+  for(int i = 0; i < strlen(TARGET); i++){
+    int curr_fitval = abs(source[i] - TARGET[i]);
     fitval += curr_fitval;
     //printf("source = %c | target = %c | diff = %d\n", source[i], target[i], curr_fitval);
   }
@@ -124,14 +122,14 @@ int get_fitness(char *source, char *target){
 }
 
 // Normalized + probability-sensitive selection from the two halves of the genepool
-candidate get_rand_parent(candidate genepool[], int gene_pool_size){
+candidate get_rand_parent(candidate genepool[]){
   int rand_index = 0;
    if(rand()% 100 < FIT_PARENT_PROB) {
      double rand_double1 = (double)rand() / (double)RAND_MAX;
      double rand_double2 = (double)rand() / (double)RAND_MAX;
-     rand_index = (int) (rand_double1 * rand_double2 * ((gene_pool_size/2) -1));
+     rand_index = (int) (rand_double1 * rand_double2 * ((GENE_POOL_SIZE/2) -1));
    }else{
-	  rand_index = (rand()%(gene_pool_size/2)) + ((gene_pool_size/2) -1);
+	  rand_index = (rand()%(GENE_POOL_SIZE/2)) + ((GENE_POOL_SIZE/2) -1);
    }
    return genepool[rand_index];
 }
