@@ -1,9 +1,9 @@
-filename=genetic_alg
+filename=serial
 
 all: compile run
 
 compile:
-	gcc-6 $(filename).c
+	@gcc-6 $(filename).c
 
 run:
-	./a.out
+	@./a.out
