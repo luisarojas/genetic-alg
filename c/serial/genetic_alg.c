@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
+const int FIT_PARENT_PROB = 90;
+const int MUTATION_PROB = 100;
 
 /* We need to keep keys and values */
 typedef struct{
@@ -14,50 +17,69 @@ typedef struct{
 //---------PROTOTYPES---------
 void test();
 char *gen_string(int length);
-int fitness(char *source, char *target);
-int candidate_comparitor(const void *arg1, const void *arg2);
+int get_fitness(char *source, char *TARGET);
+int candidate_comparator(const void *arg1, const void *arg2);
 candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE);
 void print_candidate(candidate cand);
-char *my_crossover_dna(candidate parent1, candidate parent2);
-void *mutate_single_dna(char *source);
+char *crossover(candidate parent1, candidate parent2);
+void mutate(char *source);
+int run();
 
 //---------MAIN---------
 int main() {
-    
+
+	int times_to_run = 10000;
+	int sum = 0;
+
+  for(int i = 0; i < times_to_run; i++) {
+    int num_generations = run();
+    sum += num_generations;
+    //printf("Run #%d gens=%d\n", i, num_generations);
+  }
+
+  printf("Average: %.2f\n", ((double)sum/times_to_run));
+}
+
+int run() {
   srand(time(NULL)); //Seed the random time
-  char *target = "Hello, World!"; //Set the target
-  int target_len = strlen(target); //Get target length
+  char *TARGET = "Hello, World!"; //Set the target
+  int TARGET_LEN = strlen(TARGET); //Get target length
   const int GENE_POOL_SIZE = 10; //Set the size of the gene pool
 
   //Generate the gene pool
   candidate genepool[GENE_POOL_SIZE];
   for(int i = 0; i < GENE_POOL_SIZE; i++){
     //genepool[i] = gen_string(target_len); //generate random string
-    char *rand_dna = gen_string(target_len); //create a random dna
-    int fitval = fitness(rand_dna, target); //TODO: get from fitness function
+    char *rand_dna = gen_string(TARGET_LEN); //create a random dna
+    int fitval = get_fitness(rand_dna, TARGET);
     candidate new_cand = {rand_dna, fitval}; //create a new candidate
-    genepool[i] = new_cand; //add candidate to gene pool    
+    genepool[i] = new_cand; //add candidate to gene pool
   }
 
   int generation = 0;
   while(1){
     generation++;
     //Sort the genepool by fitness
-    qsort(genepool, GENE_POOL_SIZE, sizeof(candidate), candidate_comparitor);
-    printf("[GEN %d] ", generation); print_candidate(genepool[0]); //DEBUGING
+    qsort(genepool, GENE_POOL_SIZE, sizeof(candidate), candidate_comparator);
+    //printf("[GEN %d] ", generation); print_candidate(genepool[0]); //DEBUGING
 
     if(genepool[0].fitness == 0){
       //Target Reached
-      printf("TARGET = %s\n", target);
-      break;
+      //printf("TARGET REACHED: \"%s\" in %d generations\n", TARGET, generation);
+      return generation;
     }else{
       //Select two random parents
+      // int a; test();
+      // candidate parent_test = get_rand_parent(genepool, GENE_POOL_SIZE);
+      // scanf("%d", &a); //Temp for debugging
       candidate parent1 = get_rand_parent(genepool, GENE_POOL_SIZE);
       candidate parent2 = get_rand_parent(genepool, GENE_POOL_SIZE);
 
       //Create child by corssing over the two parents
-      char *child_dna = my_crossover_dna(parent1, parent1);
-      int child_fitval = fitness(child_dna, target);
+      char *child_dna = crossover(parent1, parent1);
+      // char *child_dna = mutate(crossover(parent1, parent1));
+      mutate(child_dna);
+      int child_fitval = get_fitness(child_dna, TARGET);
       candidate child = {child_dna, child_fitval};
       //printf("CHILD: "); print_candidate(child);
 
@@ -81,15 +103,15 @@ char *gen_string(int length){
   int alphabet_len = strlen(ALPHABET); //Get the length of the alphabet
 
   //Iterate length amount of times
-  for(int i = 0; i < length; i++){    
+  for(int i = 0; i < length; i++){
     int rand_index = rand() % alphabet_len; //generate random index
     rand_string[i] = ALPHABET[rand_index];  //get random character from the alphabet
-  }  
+  }
   //printf("%s\n", rand_string); //DEBUG
   return rand_string;
 }
 
-int fitness(char *source, char *target){
+int get_fitness(char *source, char *target){
   //Calculates the difference between the source and target strings
   int fitval = 0;
   for(int i = 0; i < strlen(target); i++){
@@ -101,48 +123,62 @@ int fitness(char *source, char *target){
   return fitval;
 }
 
-candidate get_rand_parent(candidate genepool[], int GENE_POOL_SIZE){
-  const int FIT_PARENT_PROB = 90;
-  
+// Normalized + probability-sensitive selection from the two halves of the genepool
+candidate get_rand_parent(candidate genepool[], int gene_pool_size){
   int rand_index = 0;
-  float random_float = (float)rand()/(float)RAND_MAX; //Random float 0-1
-  rand_index = random_float * (GENE_POOL_SIZE/2); //Random int from: 0 - (GENE_POOL_SIZE - 1)
-  
-  if(rand()% 100 >= FIT_PARENT_PROB){
-    rand_index += (GENE_POOL_SIZE/2);
-  }
-  //printf("rand_index = %d\n", rand_index);
-  return genepool[rand_index];
+   if(rand()% 100 < FIT_PARENT_PROB) {
+     double rand_double1 = (double)rand() / (double)RAND_MAX;
+     double rand_double2 = (double)rand() / (double)RAND_MAX;
+     rand_index = (int) (rand_double1 * rand_double2 * ((gene_pool_size/2) -1));
+   }else{
+	  rand_index = (rand()%(gene_pool_size/2)) + ((gene_pool_size/2) -1);
+   }
+   return genepool[rand_index];
 }
 
 void print_candidate(candidate cand){
   printf("%s : [%d] \n", cand.dna, cand.fitness);
 }
 
-char *my_crossover_dna(candidate parent1, candidate parent2){
-  int length = strlen(parent1.dna);
-  char *child = (char *) malloc(length);
-  for(int i = 0; i < length; i++){
-    int chance = rand() % 2; //50-50 chance
-    if(chance == 1){
-      child[i] = parent1.dna[i];
-    }else{
-      child[i] = parent2.dna[i];      
-    }
-  }
+char *crossover(candidate parent1, candidate parent2){
 
-  mutate_single_dna(child);
-  //printf("%s\n", child);
-  return child;
+	// make a copy of parent 1, as child_dna
+	int length = strlen(parent1.dna);
+  char *child_dna	= (char *) malloc(length);
+  strcpy(child_dna, parent1.dna);
+
+	// select start index for parent 2 to be inserted (1 to parent2 length -1)
+	int start = (rand()%(length-1)) + 1;
+
+	// select stop index for parent 2 to end insertion (2 to parent2 length -1)
+  int end = (rand()%(length-2)) + 2;
+
+	// if start > end, then invert them
+	if (start > end) {
+		int tmp = start;
+		start = end;
+		end = tmp;
+	}
+
+	// set the defined portion of the child_dna as the parent2 dna
+	for(int i = start; i <= end; i++) {
+    child_dna[i] = parent2.dna[i];
+	}
+
+  return child_dna;
 }
 
-void *mutate_single_dna(char *source){
-  int rand_i = rand()%strlen(source);
-  source[rand_i] = source[rand_i] + (rand()%20 - 10);
+void mutate(char *source){
+
+	if(rand()% 100 < MUTATION_PROB) {
+		int rand_i = rand()%strlen(source);
+  	source[rand_i] = source[rand_i] + (rand()%20 - 10);
+	}
+
 }
 
-//---------CANDIDATE COMPARITOR---------
-int candidate_comparitor(const void *arg1, const void *arg2){
+//---------CANDIDATE COMPARATOR---------
+int candidate_comparator(const void *arg1, const void *arg2){
   const candidate *c1 = (candidate *)arg1;
   const candidate *c2 = (candidate *)arg2;
   if(c1->fitness < c2->fitness){
@@ -151,17 +187,9 @@ int candidate_comparitor(const void *arg1, const void *arg2){
     return 1;
   }else{
     return 0;
-  }  
+  }
 }
 
-//---------TEST---------
-void test(){
-
-  /* int len = strlen(ALPHABET); */
-  /* printf("len = %d\n", len); */
-  /* for(int i = 0; i < len; i++){ */
-  /*   printf("%c\n",ALPHABET[i]); */
-  /* } */
-  //printf("\n");
-  
+void test() {
+  printf("test() called\n");
 }
