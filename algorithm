@@ -7,9 +7,9 @@ While (true)
     -> If the best fitness in the
        genepool is 0, break - found a match. (SAME)
     -> Get 2 random parents to generate a new
-       child (Luisa's)
+       child (Luisa's) ***
         o Crossover: Portions of BOTH parents' DNAs
-          are combined into the child (Luisa's)
+          are combined into the child (Luisa's) ***
         o Mutation: Select a random character in the
           resulting child's DNA, and switch it to a
           different character in a change of 5,

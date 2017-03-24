@@ -23,6 +23,7 @@ void *mutate_single_dna(char *source);
 
 //---------MAIN---------
 int main() {
+    
   srand(time(NULL)); //Seed the random time
   char *target = "Hello, World!"; //Set the target
   int target_len = strlen(target); //Get target length
@@ -38,7 +39,6 @@ int main() {
     genepool[i] = new_cand; //add candidate to gene pool    
   }
 
-  //TODO: Infinite While Loop
   int generation = 0;
   while(1){
     generation++;
