@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.*;
 import java.lang.*;
+import java.util.concurrent.TimeUnit;
 
 public class Serial {
     
@@ -30,8 +31,8 @@ public class Serial {
         String childDna = parent1.getDna();
         
         Random rand = new Random();
-        int start = rand.nextInt(parent1.getDna().length() - 1) + 1;
-        int end = rand.nextInt(parent1.getDna().length() - 1) + 2;
+        int start = rand.nextInt(parent1.getDna().length()) + 1;
+        int end = rand.nextInt(parent1.getDna().length()) + 2;
 
         if (start > end) {
             start = end;
@@ -40,7 +41,7 @@ public class Serial {
         
         // Mutation
         if (rand.nextInt(100) < MUTATION_PROB) {
-            int indexToMutate = rand.nextInt(childDna.length() - 1);
+            int indexToMutate = rand.nextInt(childDna.length());
             
             // String myName = "domanokz   ";
             char[] childDnaChars = childDna.toCharArray();
@@ -104,18 +105,18 @@ public class Serial {
             
             Collections.sort(genepool);
             
-            System.out.println (generation + " " + genepool.get(0).getFitness() + " " + genepool.get(0).getDna());
+            //System.out.println (generation + " " + genepool.get(0).getFitness() + " " + genepool.get(0).getDna());
             
             if (genepool.get(0).getFitness() == 0) {
-                System.out.println("Found target at generation " + generation);
+                //System.out.println("Found target at generation " + generation);
                 return generation;
             }
             
             Candidate parent1 = getRandParent(genepool);
             Candidate parent2 = getRandParent(genepool);
             
-            while (parent1.getDna().equals(parent2.getDna()))
-                parent1 = getRandParent(genepool);
+            // while (parent1.getDna().equals(parent2.getDna()))
+            //     parent1 = getRandParent(genepool);
     
             Candidate child = mutate(parent1, parent2);
             
@@ -127,14 +128,22 @@ public class Serial {
     public static void main(String[] args) {
         
         int sum = 0;
-        int timesToRun = 1;
+        int timesToRun = 1000;
+	Double totalTime = new Double(0);
+	Long start, end;
+	Double elapsed;
         
         for (int i = 0; i < timesToRun; i ++) {
-            // System.out.println(i);
+            //System.out.println("Run #: " + i);
+	    start = System.nanoTime();
             sum += run();
+	    end = System.nanoTime();
+	    totalTime += (end-start)/1000.0;
         }
-        
-        // System.out.println("Average: " + (float) sum/timesToRun);
+
+	System.out.println("# of Runs: " + timesToRun);
+	System.out.println("Avg # Generations: " + (float) sum/timesToRun);
+	System.out.println("Avg # Micro Seconds: " + totalTime/timesToRun);
     }
 }
 

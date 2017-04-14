@@ -34,7 +34,7 @@ int main() {
 
 	TARGET_LEN = strlen(TARGET); //Get target length
 
-	int times_to_run = 1;
+	int times_to_run = 100;
 	int sum = 0;
 
   for(int i = 0; i < times_to_run; i++) {
