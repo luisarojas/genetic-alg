@@ -35,35 +35,46 @@ int run();
 
 //---------MAIN---------
 int main() {
-  srand(time(NULL)); //Seed the random time
-  NUM_THREADS = 32;
-  omp_set_num_threads(NUM_THREADS);    
-  struct timespec tstart={0,0}, tend={0,0};
-  double elapsed_time = 0;
-  int num_generations;
-    
-  TARGET_LEN = strlen(TARGET); //Get target length
-    
-  int times_to_run = 128;
-  int sum = 0;
+  srand(time(NULL));                            //Seed the random time
+  struct timespec tstart={0,0}, tend={0,0};     //Init struct for recording time
 
-  for(int i = 0; i < times_to_run; i++) {
-    //NUM_THREADS += 1;
-    clock_gettime(CLOCK_MONOTONIC, &tstart);
+  //Manually Setting the String
+  //TARGET_LEN = strlen(TARGET);                  //Get target length
 
-    num_generations = run();
-    //printf("%d,%d\n", NUM_THREADS, num_generations); //For CSV output
-    sum += num_generations;
-    clock_gettime(CLOCK_MONOTONIC, &tend);
+  //Random String
+  TARGET_LEN = 5;
+  TARGET = gen_string(TARGET_LEN);
+  
+  int MAX_THREADS = 64;                        //Will iteratie from 1 to MAX_THREADS
+  int runs_per_thread_iter = 10;               //How many runs will be done per thread iter
+
+  printf("THREADS, # GENERATIONS (%d avg)\n", runs_per_thread_iter);
+  //Iterate from 1 - MAX_THREADS and run the alg runs_per_thread_iter amount of times each iter
+  for(NUM_THREADS = 1; NUM_THREADS <= MAX_THREADS; NUM_THREADS++){
+    omp_set_num_threads(NUM_THREADS);           //Set the number of threads    
+    int num_generations;                        //holds the result from run()
+    double elapsed_time = 0;                    //Used for statistics of each run
+    int sum = 0;                                //Used to calculate average
+
+    //Run it runs_per_thread_iter amount of times to get more accurate result
+    for(int i = 0; i < runs_per_thread_iter; i++) {
+      clock_gettime(CLOCK_MONOTONIC, &tstart);  //START TIMER
+
+      num_generations = run();                  //RUN THE ALGORITHM
+      sum += num_generations;                   //ADD result to the sum
+      clock_gettime(CLOCK_MONOTONIC, &tend);    //END TIMER
         
-    // compute and print the elapsed time in millisec
-    elapsed_time += (((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
-    
-  }
+      // compute and print the elapsed time in millisec
+      elapsed_time += (((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));      
+    }
 
-  printf("# of runs: %d\n", times_to_run);
-  printf("Avg. generations: %.2f\n", ((double)sum/times_to_run));
-  printf("Time avg. (microseconds): %f\n", (elapsed_time/(double)times_to_run)*1000000.0);
+    //STATISTICS
+    double avg_generations = (double)sum/runs_per_thread_iter;
+    double avg_elapsed_time = (elapsed_time/(double)runs_per_thread_iter)*1000000.0;
+    
+    printf("%d,%.2f\n", NUM_THREADS, avg_generations); //For CSV output
+    //printf("[THREADS: %d]: [AVG GENS: %.2f] [AVG TIME: %.2f]\n",NUM_THREADS, avg_generations, avg_elapsed_time);    
+  }
 }
 
 int run() {

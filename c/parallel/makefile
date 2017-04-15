@@ -1,9 +1,10 @@
 filename=parallel_omp.c
+#filename=parallel_pthreads.c
 
-all: compile run
+omp: compile run
 
 compile:
-	@gcc-6 -fopenmp $(filename)
+	@gcc-6 -fopenmp -pthread $(filename)
 
 run:
 	@./a.out
