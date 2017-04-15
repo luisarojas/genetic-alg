@@ -1,4 +1,4 @@
-filename=parallel.c
+filename=parallel_omp.c
 
 all: compile run
 
