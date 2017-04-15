@@ -134,7 +134,6 @@ public class Serial {
         int timesToRun = 1000;
 	Double totalTime = new Double(0);
 	Long start, end;
-	Double elapsed;
         
         for (int i = 0; i < timesToRun; i ++) {
             //System.out.println("Run #: " + i);
@@ -144,9 +143,9 @@ public class Serial {
 	    totalTime += (end-start)/1000.0;
         }
 
-	System.out.println("# of Runs: " + timesToRun);
-	System.out.println("Avg Generations: " + (float) sum/timesToRun);
-	System.out.println("Avg Micro Seconds: " + totalTime/timesToRun);
+	System.out.println("# of runs: " + timesToRun);
+	System.out.println("Avg. generations: " + (float) sum/timesToRun);
+	System.out.println("Time avg. (microseconds): " + totalTime/timesToRun);
     }
 }
 

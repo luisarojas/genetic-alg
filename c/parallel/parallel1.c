@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <pthread.h>
 
 // #define NUM_THREADS 2
@@ -33,18 +33,28 @@ int run();
 //---------MAIN---------
 int main() {
 
+    struct timespec tstart={0,0}, tend={0,0};
+    double elapsed_time = 0;
+
 	TARGET_LEN = strlen(TARGET); //Get target length
 
-	int times_to_run = 100;
+	int times_to_run = 1000;
 	int sum = 0;
 
   for(int i = 0; i < times_to_run; i++) {
-    int num_generations = run();
-    sum += num_generations;
     //printf("Run #%d gens=%d\n", i, num_generations);
+    clock_gettime(CLOCK_MONOTONIC, &tstart);
+
+    sum += run();
+    clock_gettime(CLOCK_MONOTONIC, &tend);
+
+    // compute and print the elapsed time in millisec
+    elapsed_time += (((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec));
   }
 
-  printf("Average: %.2f\n", ((double)sum/times_to_run));
+  printf("# of runs: %d\n", times_to_run);
+  printf("Avg. generations: %.2f\n", ((double)sum/times_to_run));
+  printf("Time avg. (microseconds): %f\n", (elapsed_time/(double)times_to_run)*1000000.0);
 }
 
 int run() {
@@ -149,7 +159,7 @@ char *crossover(candidate parent1, candidate parent2){
 	// select start index for parent 2 to be inserted (1 to parent2 length -1)
 	int start = (rand()%(length-1)) + 1;
 
-	// select stop index for parent 2 to end insertion (2 to parent2 length -1)
+	// select stop index for parent 2 to end insertion (2 to parent2 length -2)
   int end = (rand()%(length-2)) + 2;
 
 	// if start > end, then invert them
