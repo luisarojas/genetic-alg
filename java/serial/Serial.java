@@ -31,13 +31,16 @@ public class Serial {
         String childDna = parent1.getDna();
         
         Random rand = new Random();
-        int start = rand.nextInt(parent1.getDna().length()) + 1;
-        int end = rand.nextInt(parent1.getDna().length()) + 2;
+        int start = rand.nextInt(parent1.getDna().length()-1) + 1;
+        int end = rand.nextInt(parent1.getDna().length()-2) + 2;
 
         if (start > end) {
-            start = end;
-            end = start;
+            int tmp = start;
+    		start = end;
+    		end = tmp;
         }
+        
+        childDna = childDna.substring(0, start) + parent2.getDna().substring(start, end+1) + childDna.substring(end+1, childDna.length());
         
         // Mutation
         if (rand.nextInt(100) < MUTATION_PROB) {
@@ -142,8 +145,8 @@ public class Serial {
         }
 
 	System.out.println("# of Runs: " + timesToRun);
-	System.out.println("Avg # Generations: " + (float) sum/timesToRun);
-	System.out.println("Avg # Micro Seconds: " + totalTime/timesToRun);
+	System.out.println("Avg Generations: " + (float) sum/timesToRun);
+	System.out.println("Avg Micro Seconds: " + totalTime/timesToRun);
     }
 }
 
