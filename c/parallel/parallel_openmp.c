@@ -3,8 +3,9 @@
 #include <string.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <omp.h>
 
-// #define NUM_THREADS 2
+#define NUM_THREADS 2
 
 const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
 const char *TARGET = "Hello, World!"; //Set the target

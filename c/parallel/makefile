@@ -1,9 +1,9 @@
-filename=parallel1.c
+filename=parallel.c
 
 all: compile run
 
 compile:
-	gcc-6 $(filename)
+	@gcc-6 $(filename)
 
 run:
-	./a.out
+	@./a.out
