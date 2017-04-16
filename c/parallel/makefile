@@ -1,5 +1,6 @@
 filename=parallel_omp.c
-filename=parallel_pthreads.c
+#filename=parallel_omp2.c
+#filename=parallel_pthreads.c
 
 omp: compile run
 
