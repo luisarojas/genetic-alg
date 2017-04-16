@@ -6,9 +6,13 @@ import java.lang.*;
 import java.util.concurrent.TimeUnit;
 
 public class Parallel {
+    public static int NUM_THREADS;
+    public static int MAX_THREADS;
+    public static Candidate best_child;
     
     public static int GENESIZE = 20;
     public static String TARGET = "Hello, World!";
+    public static int TARGET_LEN;
     
     // public static int CROSSOVER_PROB = 100 // TODO: Introduce cross over probability
     public static int PARENT1_PROB = 50; // so, parent2_prob = 100 - PARENT1_PROB
@@ -36,8 +40,8 @@ public class Parallel {
 
         if (start > end) {
             int tmp = start;
-    		start = end;
-    		end = tmp;
+	    start = end;
+	    end = tmp;
         }
         
         childDna = childDna.substring(0, start) + parent2.getDna().substring(start, end+1) + childDna.substring(end+1, childDna.length());
@@ -82,8 +86,8 @@ public class Parallel {
             String dna = "";
 
             for (int j = 0; j < TARGET.length(); j++) {
-              data = (char)(rand.nextInt(95) + 31);
-              dna += data;
+		data = (char)(rand.nextInt(95) + 31);
+		dna += data;
             }
 
             float fitness = getFitness(dna);
@@ -94,8 +98,8 @@ public class Parallel {
         return genepool;
     }
 
-    public static int run() {
-        
+    public static int run()throws Exception{
+        Parallel.best_child = new Candidate(null, Integer.MAX_VALUE);
         int generation = 0;
         List<Candidate> genepool = seedPopulation();
 
@@ -114,38 +118,55 @@ public class Parallel {
                 //System.out.println("Found target at generation " + generation);
                 return generation;
             }
+
+	    //MyThread[] threads = new MyThread[Parallel.NUM_THREADS];
+	    //Run the threads
+	    for(int i = 0; i < Parallel.NUM_THREADS; i++){
+		MyThread temp = new MyThread(""+i, genepool);
+		temp.start();
+		temp.join();
+	    }
+	    
             
-            Candidate parent1 = getRandParent(genepool);
-            Candidate parent2 = getRandParent(genepool);
-            
-            // while (parent1.getDna().equals(parent2.getDna()))
-            //     parent1 = getRandParent(genepool);
-    
-            Candidate child = mutate(parent1, parent2);
-            
-            if (child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
-                genepool.set(GENESIZE - 1, child);
+            if (Parallel.best_child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
+                genepool.set(GENESIZE - 1, Parallel.best_child);
         }
     }
 
-    public static void main(String[] args) {
-        
-        int sum = 0;
-        int timesToRun = 1000;
-	Double totalTime = new Double(0);
-	Long start, end;
-        
-        for (int i = 0; i < timesToRun; i ++) {
-            //System.out.println("Run #: " + i);
-	    start = System.nanoTime();
-            sum += run();
-	    end = System.nanoTime();
-	    totalTime += (end-start)/1000.0;
-        }
+    public static void main(String[] args) throws Exception{
+	Parallel.TARGET_LEN = 20;
+	Parallel.MAX_THREADS = 64;
+	//Generate a random TARGET
+	Random rand = new Random();
+	Parallel.TARGET = "";
+	char data = ' ';
 
-	System.out.println("# of runs: " + timesToRun);
-	System.out.println("Avg. generations: " + (float) sum/timesToRun);
-	System.out.println("Time avg. (microseconds): " + totalTime/timesToRun);
+	for (int j = 0; j < Parallel.TARGET_LEN; j++) {
+	    data = (char)(rand.nextInt(95) + 31);
+	    Parallel.TARGET += data;
+	}
+	
+	int runs_per_thread_iter = 100;
+	Long start, end;
+	
+	System.out.println("THREADS, # GENERATIONS (%" + runs_per_thread_iter +" avg)");
+
+	for(Parallel.NUM_THREADS = 1; Parallel.NUM_THREADS <= Parallel.MAX_THREADS; Parallel.NUM_THREADS++){
+	    int sum = 0;
+	    Double totalTime = new Double(0);
+        
+	    for (int i = 0; i < runs_per_thread_iter; i ++) {
+		//System.out.println("Run #: " + i);
+		start = System.nanoTime();
+		sum += run();
+		end = System.nanoTime();
+		totalTime += (end-start)/1000.0;
+	    }
+
+	    double avg_generations = (double)sum/runs_per_thread_iter;
+	    double avg_elapsed_time = totalTime/runs_per_thread_iter;
+	    System.out.println(Parallel.NUM_THREADS + "," + avg_generations);
+	}
     }
 }
 
@@ -191,5 +212,31 @@ class Candidate implements Comparator<Candidate>, Comparable<Candidate> {
         
         //descending order
         //return c2.compareTo(c1);
+    }
+}
+
+class MyThread extends Thread{
+    List<Candidate> genepool;
+
+    MyThread(String name, List<Candidate> genepool){
+	super(name);
+	this.genepool = genepool;
+    }
+
+    public void run(){
+	Candidate parent1 = Parallel.getRandParent(this.genepool);
+	Candidate parent2 = Parallel.getRandParent(this.genepool);
+            
+	// while (parent1.getDna().equals(parent2.getDna()))
+	//     parent1 = getRandParent(genepool);
+    
+	Candidate child = Parallel.mutate(parent1, parent2);
+
+	synchronized(Parallel.best_child){
+	    if(child.getFitness() < Parallel.best_child.getFitness()){
+		Parallel.best_child = child;
+	    }
+	}	
+	//System.out.println("Running thread:" + this.getName());
     }
 }

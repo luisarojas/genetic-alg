@@ -6,9 +6,12 @@ import java.lang.*;
 import java.util.concurrent.TimeUnit;
 
 public class Serial {
+    public static int NUM_THREADS;
+    public static int MAX_THREADS;
     
     public static int GENESIZE = 20;
     public static String TARGET = "Hello, World!";
+    public static int TARGET_LEN;
     
     // public static int CROSSOVER_PROB = 100 // TODO: Introduce cross over probability
     public static int PARENT1_PROB = 50; // so, parent2_prob = 100 - PARENT1_PROB
@@ -129,23 +132,41 @@ public class Serial {
     }
 
     public static void main(String[] args) {
-        
-        int sum = 0;
-        int timesToRun = 1000;
-	Double totalTime = new Double(0);
-	Long start, end;
-        
-        for (int i = 0; i < timesToRun; i ++) {
-            //System.out.println("Run #: " + i);
-	    start = System.nanoTime();
-            sum += run();
-	    end = System.nanoTime();
-	    totalTime += (end-start)/1000.0;
-        }
+	//IMPORTANT: This is actually serial, but just used as a base for making it
+	//parallizable
+	Serial.MAX_THREADS = 64;
+	Serial.TARGET_LEN = 5;
+	//Generate a random TARGET
+	Random rand = new Random();
+	Serial.TARGET = "";
+	char data = ' ';
 
-	System.out.println("# of runs: " + timesToRun);
-	System.out.println("Avg. generations: " + (float) sum/timesToRun);
-	System.out.println("Time avg. (microseconds): " + totalTime/timesToRun);
+	for (int j = 0; j < TARGET_LEN; j++) {
+	    data = (char)(rand.nextInt(95) + 31);
+	    Serial.TARGET += data;
+	}
+	    
+	int runs_per_thread_iter = 100;
+	Long start, end;
+	
+	System.out.println("THREADS, # GENERATIONS (%" + runs_per_thread_iter +" avg)");
+
+	for(Serial.NUM_THREADS = 1; Serial.NUM_THREADS <= Serial.MAX_THREADS; Serial.NUM_THREADS++){
+	    int sum = 0;
+	    Double totalTime = new Double(0);
+        
+	    for (int i = 0; i < runs_per_thread_iter; i ++) {
+		//System.out.println("Run #: " + i);
+		start = System.nanoTime();
+		sum += run();
+		end = System.nanoTime();
+		totalTime += (end-start)/1000.0;
+	    }
+
+	    double avg_generations = (double)sum/runs_per_thread_iter;
+	    double avg_elapsed_time = totalTime/runs_per_thread_iter;
+	    System.out.println(Serial.NUM_THREADS + "," + avg_generations);
+	}
     }
 }
 
