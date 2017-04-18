@@ -2,14 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <limits.h>
 #include <pthread.h>
+#include <omp.h>
+#include <limits.h>
 
-/* We need to keep keys and values */
-typedef struct{
-  char* dna;
-  int fitness;
-} candidate;
+//#define NUM_THREADS 16
+int NUM_THREADS = 2;
 
 const char *ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ";
 const char *TARGET = "Hello, World!"; //Set the target
@@ -17,15 +15,12 @@ const int GENE_POOL_SIZE = 10; //Set the size of the gene pool
 const int FIT_PARENT_PROB = 90;
 const int MUTATION_PROB = 100;
 int TARGET_LEN;
-int NUM_THREADS;
 
-//PTHREAD STUFF
-candidate best_child = {NULL, INT_MAX}; //Used as the shared variable for all the threads
-pthread_mutex_t mutex_best_child; //Mutex lock for the shared variable best_child
-pthread_mutex_t mutex_done;
-pthread_cond_t cond_done;
-int global_result;
-
+/* We need to keep keys and values */
+typedef struct{
+  char* dna;
+  int fitness;
+} candidate;
 
 //---------PROTOTYPES---------
 void test();
@@ -37,28 +32,23 @@ void print_candidate(candidate cand);
 char *crossover(candidate parent1, candidate parent2);
 void mutate(char *source);
 int run();
-void *run_thread(void *args);
 
 //---------MAIN---------
-//Despite the mention of threads, it is not actually Parallel, just used as a base when
-//actually parallelizing the code
 int main() {
   srand(time(NULL));                            //Seed the random time
   struct timespec tstart={0,0}, tend={0,0};     //Init struct for recording time
 
   //Manually Setting the String
-  TARGET_LEN = strlen(TARGET);                  //Get target length
+  //TARGET_LEN = strlen(TARGET);                  //Get target length
 
   //Random String
-  /* TARGET_LEN = 5; */
-  /* TARGET = gen_string(TARGET_LEN); */
-  
-  int MAX_THREADS = 64;                        //Will iteratie from 1 to MAX_THREADS
-  int runs_per_thread_iter = 10;               //How many runs will be done per thread iter
+  int MAX_TARGET_LEN = 15;                        //Will iteratie from 1 to MAX_THREADS
+  int runs_per_thread_iter = 100;               //How many runs will be done per thread iter
 
-  printf("THREADS, # GENERATIONS (%d avg)\n", runs_per_thread_iter);
+  printf("THREADS, # GENERATIONS (%d avg), AVG TIME(micros)\n", runs_per_thread_iter);
   //Iterate from 1 - MAX_THREADS and run the alg runs_per_thread_iter amount of times each iter
-  for(NUM_THREADS = 1; NUM_THREADS <= MAX_THREADS; NUM_THREADS++){
+  for(TARGET_LEN = 3; TARGET_LEN <= MAX_TARGET_LEN; TARGET_LEN++){
+    TARGET = gen_string(TARGET_LEN);
     int num_generations;                        //holds the result from run()
     double elapsed_time = 0;                    //Used for statistics of each run
     int sum = 0;                                //Used to calculate average
@@ -79,63 +69,14 @@ int main() {
     double avg_generations = (double)sum/runs_per_thread_iter;
     double avg_elapsed_time = (elapsed_time/(double)runs_per_thread_iter)*1000000.0;
     
-    printf("%d,%.2f\n", NUM_THREADS, avg_generations); //For CSV output
+
+    printf("%d,%.2f,%.2f\n", TARGET_LEN, avg_generations, avg_elapsed_time); //For CSV output
     //printf("[THREADS: %d]: [AVG GENS: %.2f] [AVG TIME: %.2f]\n",NUM_THREADS, avg_generations, avg_elapsed_time);    
   }
 }
 
-
 int run() {
-  best_child.dna = NULL;
-  best_child.fitness = INT_MAX;
-
-  //Declare the threads
-  pthread_t threads[NUM_THREADS];
-
-  //Attributes
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-  //Init the mutex
-  pthread_mutex_init(&mutex_best_child, NULL);
-  pthread_cond_init(&cond_done, NULL);
-
-  //Run the threads
-  for(int i = 0; i < NUM_THREADS; i++){
-    //Set the data
-		
-    int error = pthread_create(&threads[i], &attr, run_thread, (void *) NULL);
-    if(error){
-      printf("ERROR %d: Creating thread %d\n", error, i);
-      return -1;
-    }
-  }
-
-  //Join all the threads
-  for(int i = 0; i < NUM_THREADS; i++){
-    int error = pthread_join(threads[i], NULL);
-    if(error){
-      printf("ERROR %d: Joining thread %d\n", error, i);
-      return -1;
-    }
-  }
-
-  //Wait for the result to be sent by one of the threads
-  pthread_mutex_lock(&mutex_done);
-  pthread_cond_wait(&cond_done, &mutex_done);
-  pthread_mutex_unlock(&mutex_done);
-
-  //Destory everything
-  pthread_attr_destroy(&attr);
-  pthread_mutex_destroy(&mutex_best_child);
-  pthread_cond_destroy(&cond_done);
-
-  
-  return global_result;
-}
-void *run_thread(void *args){
- 
+    
   //Generate the gene pool
   candidate genepool[GENE_POOL_SIZE];
   for(int i = 0; i < GENE_POOL_SIZE; i++){
@@ -156,39 +97,39 @@ void *run_thread(void *args){
     if(genepool[0].fitness == 0){
       //Target Reached
       //printf("TARGET REACHED: \"%s\" in %d generations\n", TARGET, generation); //UNCOMMENT WHEN BENCHMARKING
-      
-      //Send the signal that we are complete
-      pthread_cond_signal(&cond_done);
-      global_result = generation;
-      pthread_exit(NULL);
+      return generation;
     } else {
-      //Select two random parents
-      candidate parent1 = get_rand_parent(genepool);
-      candidate parent2 = get_rand_parent(genepool);
+
+      candidate best_child = {NULL, INT_MAX};
+      #pragma omp parallel shared(best_child)
+      {
+	//Select two random parents
+	candidate parent1 = get_rand_parent(genepool);
+	candidate parent2 = get_rand_parent(genepool);
             
-      //Create child by corssing over the two parents
-      char *child_dna = crossover(parent1, parent1);
-      mutate(child_dna);
-      int child_fitval = get_fitness(child_dna);
-      candidate child = {child_dna, child_fitval};
-
-
-      pthread_mutex_lock(&mutex_best_child);
-      if(child.fitness < best_child.fitness){
-	best_child = child;
-      }
-      pthread_mutex_unlock(&mutex_best_child);
-
+	//Create child by corssing over the two parents
+	char *child_dna = crossover(parent1, parent1);
+	mutate(child_dna);
+	int child_fitval = get_fitness(child_dna);
+	candidate child = {child_dna, child_fitval};
+        #pragma omp critical (best_child)
+	{
+	  if(child.fitness < best_child.fitness){
+	    best_child = child;
+	  }
+	}
+      }//Implicit Barrier
+            
       //Check if the child is better than the worst person in the genepool
       candidate lowest_cand = genepool[GENE_POOL_SIZE -1 ];
       if(best_child.fitness < lowest_cand.fitness){
 	genepool[GENE_POOL_SIZE -1 ] = best_child;
       }
-    }            
+    }
   }
     
   //test();
-  pthread_exit(NULL);
+  return 0;
 }
 
 //---------UTILITY FUNCTIONS---------
