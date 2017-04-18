@@ -5,9 +5,10 @@ import java.util.*;
 import java.lang.*;
 import java.util.concurrent.TimeUnit;
 
-public class SerialTime {
+public class ParallelTime {
     public static int NUM_THREADS;
     public static int MAX_THREADS;
+    public static Candidate best_child;
     
     public static int GENESIZE = 20;
     public static String TARGET = "Hello, World!";
@@ -39,8 +40,8 @@ public class SerialTime {
 
         if (start > end) {
             int tmp = start;
-    		start = end;
-    		end = tmp;
+	    start = end;
+	    end = tmp;
         }
         
         childDna = childDna.substring(0, start) + parent2.getDna().substring(start, end+1) + childDna.substring(end+1, childDna.length());
@@ -88,7 +89,7 @@ public class SerialTime {
         return genepool;
     }
 
-    public static String gen_rand_string(int length){
+        public static String gen_rand_string(int length){
 	String randString = "";
 	Random rand = new Random();
 	for(int i = 0; i < length; i++){
@@ -97,8 +98,8 @@ public class SerialTime {
 	return randString;
     }
 
-    public static int run() {
-        
+    public static int run()throws Exception{
+        ParallelTime.best_child = new Candidate(null, Integer.MAX_VALUE);
         int generation = 0;
         List<Candidate> genepool = seedPopulation();
 
@@ -117,34 +118,33 @@ public class SerialTime {
                 //System.out.println("Found target at generation " + generation);
                 return generation;
             }
+
+	    //MyThread[] threads = new MyThread[ParallelTime.NUM_THREADS];
+	    //Run the threads
+	    for(int i = 0; i < ParallelTime.NUM_THREADS; i++){
+		MyThread temp = new MyThread(""+i, genepool);
+		temp.start();
+		temp.join();
+	    }
+	    
             
-            Candidate parent1 = getRandParent(genepool);
-            Candidate parent2 = getRandParent(genepool);
-            
-            // while (parent1.getDna().equals(parent2.getDna()))
-            //     parent1 = getRandParent(genepool);
-    
-            Candidate child = mutate(parent1, parent2);
-            
-            if (child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
-                genepool.set(GENESIZE - 1, child);
+            if (ParallelTime.best_child.getFitness() < genepool.get(GENESIZE - 1).getFitness())
+                genepool.set(GENESIZE - 1, ParallelTime.best_child);
         }
     }
 
-    public static void main(String[] args) {
-	//IMPORTANT: This is actually serial, but just used as a base for making it
-	//parallizable
+    public static void main(String[] args) throws Exception{
 	Long start, end;
 	int runs_per_thread_iter = 100;
 	int MAX_TARGET_LEN = 15;
-	SerialTime.NUM_THREADS = 2;	
-	SerialTime.TARGET = "";	    
+	ParallelTime.NUM_THREADS = 2;	
+	ParallelTime.TARGET = "";	    
 	
 	System.out.println("LENGTH, # GENERATIONS (%" + runs_per_thread_iter +" avg)" + ", Time(microsec)");
 
-	//for(SerialTime.NUM_THREADS = 1; SerialTime.NUM_THREADS <= SerialTime.MAX_THREADS; SerialTime.NUM_THREADS++){
-	for(SerialTime.TARGET_LEN = 3; SerialTime.TARGET_LEN <= MAX_TARGET_LEN; SerialTime.TARGET_LEN++){
-	    SerialTime.TARGET = gen_rand_string(SerialTime.TARGET_LEN);
+	//for(ParallelTime.NUM_THREADS = 1; ParallelTime.NUM_THREADS <= ParallelTime.MAX_THREADS; ParallelTime.NUM_THREADS++){
+	for(ParallelTime.TARGET_LEN = 3; ParallelTime.TARGET_LEN <= MAX_TARGET_LEN; ParallelTime.TARGET_LEN++){
+	    ParallelTime.TARGET = gen_rand_string(ParallelTime.TARGET_LEN);
 	    int sum = 0;
 	    Double totalTime = new Double(0);
         
@@ -158,7 +158,7 @@ public class SerialTime {
 
 	    double avg_generations = (double)sum/runs_per_thread_iter;
 	    double avg_elapsed_time = totalTime/runs_per_thread_iter;
-	    System.out.println(String.format("%d,%.2f,%.2f", SerialTime.TARGET_LEN, avg_generations, avg_elapsed_time));
+	    System.out.println(String.format("%d,%.2f,%.2f", ParallelTime.TARGET_LEN, avg_generations, avg_elapsed_time));
 	}
     }
 }
@@ -205,5 +205,31 @@ class Candidate implements Comparator<Candidate>, Comparable<Candidate> {
         
         //descending order
         //return c2.compareTo(c1);
+    }
+}
+
+class MyThread extends Thread{
+    List<Candidate> genepool;
+
+    MyThread(String name, List<Candidate> genepool){
+	super(name);
+	this.genepool = genepool;
+    }
+
+    public void run(){
+	Candidate parent1 = ParallelTime.getRandParent(this.genepool);
+	Candidate parent2 = ParallelTime.getRandParent(this.genepool);
+            
+	// while (parent1.getDna().equals(parent2.getDna()))
+	//     parent1 = getRandParent(genepool);
+    
+	Candidate child = ParallelTime.mutate(parent1, parent2);
+
+	synchronized(ParallelTime.best_child){
+	    if(child.getFitness() < ParallelTime.best_child.getFitness()){
+		ParallelTime.best_child = child;
+	    }
+	}	
+	//System.out.println("Running thread:" + this.getName());
     }
 }
