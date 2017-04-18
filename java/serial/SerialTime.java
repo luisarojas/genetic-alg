@@ -5,7 +5,7 @@ import java.util.*;
 import java.lang.*;
 import java.util.concurrent.TimeUnit;
 
-public class Serial {
+public class SerialTime {
     public static int NUM_THREADS;
     public static int MAX_THREADS;
     
@@ -79,22 +79,22 @@ public class Serial {
         List<Candidate> genepool = new ArrayList<Candidate>();
         
         for (int i = 0; i < GENESIZE; i++) {
-            
-            Random rand = new Random();
-            char data = ' ';
-            String dna = "";
-
-            for (int j = 0; j < TARGET.length(); j++) {
-              data = (char)(rand.nextInt(95) + 31);
-              dna += data;
-            }
-
+	    String dna = gen_rand_string(TARGET.length());
             float fitness = getFitness(dna);
         
             genepool.add(new Candidate(dna, fitness));
         }
 
         return genepool;
+    }
+
+    public static String gen_rand_string(int length){
+	String randString = "";
+	Random rand = new Random();
+	for(int i = 0; i < length; i++){
+	    randString += (char)(rand.nextInt(95) + 31);
+	}	
+	return randString;
     }
 
     public static int run() {
@@ -134,24 +134,17 @@ public class Serial {
     public static void main(String[] args) {
 	//IMPORTANT: This is actually serial, but just used as a base for making it
 	//parallizable
-	Serial.MAX_THREADS = 64;
-	Serial.TARGET_LEN = 5;
-	//Generate a random TARGET
-	Random rand = new Random();
-	Serial.TARGET = "";
-	char data = ' ';
-
-	for (int j = 0; j < TARGET_LEN; j++) {
-	    data = (char)(rand.nextInt(95) + 31);
-	    Serial.TARGET += data;
-	}
-	    
-	int runs_per_thread_iter = 100;
 	Long start, end;
+	int runs_per_thread_iter = 100;
+	int MAX_TARGET_LEN = 15;
+	SerialTime.NUM_THREADS = 2;	
+	SerialTime.TARGET = "";	    
 	
-	System.out.println("THREADS, # GENERATIONS (%" + runs_per_thread_iter +" avg)");
+	System.out.println("LENGTH, # GENERATIONS (%" + runs_per_thread_iter +" avg)" + ", Time(microsec)");
 
-	for(Serial.NUM_THREADS = 1; Serial.NUM_THREADS <= Serial.MAX_THREADS; Serial.NUM_THREADS++){
+	//for(SerialTime.NUM_THREADS = 1; SerialTime.NUM_THREADS <= SerialTime.MAX_THREADS; SerialTime.NUM_THREADS++){
+	for(SerialTime.TARGET_LEN = 3; SerialTime.TARGET_LEN <= MAX_TARGET_LEN; SerialTime.TARGET_LEN++){
+	    SerialTime.TARGET = gen_rand_string(SerialTime.TARGET_LEN);;	    
 	    int sum = 0;
 	    Double totalTime = new Double(0);
         
@@ -165,7 +158,7 @@ public class Serial {
 
 	    double avg_generations = (double)sum/runs_per_thread_iter;
 	    double avg_elapsed_time = totalTime/runs_per_thread_iter;
-	    System.out.println(Serial.NUM_THREADS + "," + avg_generations);
+	    System.out.println(String.format("%d,%.2f,%.2f", SerialTime.TARGET_LEN, avg_generations, avg_elapsed_time));
 	}
     }
 }
