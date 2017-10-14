@@ -11,7 +11,7 @@ Since there are multiple unknowns in the scope of the project, we will approach 
 
 After, run times between the sequential and parallelized program(s) will be compared and analyzed. The comparison will also involve times between varying number of threads for the parallel version of the program, which will be outlined in a report.
 
-###Pseudocode
+### Pseudocode
 ```
 Generate Gene pool
     -> New random DNA (SAME)
